@@ -92,4 +92,9 @@ public class Torrent {
         this.status = status;
     }
 
+    @Override
+    public String toString() {
+        return name + "-" + season + "-" + episode + "-" + pid;
+    }
+
 }
