@@ -41,9 +41,9 @@ public class DownloadDeamon implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        ErrorCode errorCode = new ErrorCode();
         currentTorrent = null;
         while (true) {
+            ErrorCode errorCode = new ErrorCode();
             try {
                 Iterable<Torrent> torrents = torrentRepository.findAll();
                 Torrent startedTorrent = findStartedTorrent(torrents);
@@ -82,7 +82,14 @@ public class DownloadDeamon implements ApplicationRunner {
             return false;
         }
 
-        ResponseEntity<String> result = callDownloadStatusFromTorrentService(pid);
+        ResponseEntity<String> result = null;
+        try {
+            result = callDownloadStatusFromTorrentService(pid);
+        } catch (Exception e) {
+            errorCode.setStatus(ErrorStatusTP.ERROR);
+            errorCode.setMessage("Error calling TorrentService Download Status.\n" + e.getMessage());
+            return false;
+        }
         if (isResponseValid(result, errorCode)) {
             ObjectMapper jsonMapper = new ObjectMapper();
             try {
@@ -92,7 +99,7 @@ public class DownloadDeamon implements ApplicationRunner {
                 }
             } catch (JsonProcessingException e) {
                 errorCode.setStatus(ErrorStatusTP.ERROR);
-                errorCode.setMessage("Error to convert json into DownloadStatus class.");
+                errorCode.setMessage("Error to convert json into DownloadStatus class.\n" + e.getMessage());
                 return false;
             }
         }
@@ -113,6 +120,11 @@ public class DownloadDeamon implements ApplicationRunner {
     }
 
     private boolean isResponseValid(ResponseEntity<String> result, ErrorCode errorCode) {
+        if (result == null) {
+            errorCode.setStatus(ErrorStatusTP.ERROR);
+            errorCode.setMessage("Response is null.");
+            return false;
+        }
         HttpStatus statusCode = result.getStatusCode();
         if (HttpStatus.OK.equals(statusCode)) {
             String body = result.getBody();
