@@ -24,6 +24,7 @@ import torrent.manager.error.ErrorCode;
 import torrent.manager.error.ErrorStatusTP;
 import torrent.manager.model.Torrent;
 import torrent.manager.model.TorrentStatusTP;
+import torrent.manager.torrentservice.Download;
 import torrent.manager.torrentservice.DownloadStatus;
 
 @Component
@@ -61,7 +62,12 @@ public class DownloadDeamon implements ApplicationRunner {
                 }
 
                 if (!isTorrentDownloading) {
-                    startDownload(currentTorrent);
+                    errorCode = startDownload(currentTorrent);
+                    if (ErrorStatusTP.ERROR.equals(errorCode.getStatus())) {
+                        System.err.println(errorCode.getMessage());
+                        Thread.sleep(Long.parseLong(config.getDeamonSleepTime()));
+                        continue;
+                    }
                 }
 
                 System.out
@@ -73,7 +79,52 @@ public class DownloadDeamon implements ApplicationRunner {
         }
     }
 
-    private void startDownload(Torrent torrent) {
+    private ErrorCode startDownload(Torrent torrent) {
+        ResponseEntity<String> result = callPostDownloadFromTorrentService(torrent);
+        ErrorCode errorCode = validateResponse(result);
+        if (ErrorStatusTP.ERROR.equals(errorCode.getStatus())) {
+            return errorCode;
+        }
+
+        ObjectMapper jsonMapper = new ObjectMapper();
+        try {
+            Download downloadInfo = jsonMapper.readValue(result.getBody(), Download.class);
+            System.out.println("Starting " + downloadInfo.url + " download with pid=" + downloadInfo.pid);
+            torrent.setPid(downloadInfo.pid);
+            torrent.setStatus(TorrentStatusTP.STARTED);
+            torrentRepository.save(torrent);
+        } catch (JsonProcessingException e) {
+            return new ErrorCode(ErrorStatusTP.ERROR, "Error to convert json into Download class.\n" + e.getMessage());
+        }
+
+        return errorCode;
+    }
+
+    private ResponseEntity<String> callPostDownloadFromTorrentService(Torrent torrent) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        HttpEntity<String> entity = new HttpEntity<String>("{\"url\":\"" + torrent.getUrl() + "\"}", headers);
+        String url = Utils.buildUrlString(config.getTorrentServiceHost(), config.getTorrentServicePort(), "download");
+        ResponseEntity<String> result = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+        return result;
+    }
+
+    private ErrorCode validateResponse(ResponseEntity<String> response) {
+        ErrorCode errorCode = new ErrorCode();
+        if (!HttpStatus.CREATED.equals(response.getStatusCode())) {
+            errorCode.setStatus(ErrorStatusTP.ERROR);
+            errorCode.setMessage(response.getBody());
+            return errorCode;
+        }
+
+        String body = response.getBody();
+        if (Utils.isNullOrEmpty(body)) {
+            errorCode.setStatus(ErrorStatusTP.ERROR);
+            errorCode.setMessage("Response body is empty.");
+            return errorCode;
+        }
+        return errorCode;
     }
 
     private boolean isTorrentDownloading(Torrent torrent, ErrorCode errorCode) {
@@ -84,7 +135,7 @@ public class DownloadDeamon implements ApplicationRunner {
 
         ResponseEntity<String> result = null;
         try {
-            result = callDownloadStatusFromTorrentService(pid);
+            result = callGetDownloadStatusFromTorrentService(pid);
         } catch (Exception e) {
             errorCode.setStatus(ErrorStatusTP.ERROR);
             errorCode.setMessage("Error calling TorrentService Download Status.\n" + e.getMessage());
@@ -107,12 +158,12 @@ public class DownloadDeamon implements ApplicationRunner {
         return false;
     }
 
-    private ResponseEntity<String> callDownloadStatusFromTorrentService(String pid) {
+    private ResponseEntity<String> callGetDownloadStatusFromTorrentService(String pid) {
         RestTemplate restTemplate = new RestTemplate();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        HttpEntity<String> entity = new HttpEntity<String>("parameters", headers);
+        HttpEntity<String> entity = new HttpEntity<String>(null, headers);
         String url = Utils.buildUrlString(config.getTorrentServiceHost(), config.getTorrentServicePort(), "download",
                 pid);
         ResponseEntity<String> result = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);

@@ -12,8 +12,10 @@ public class Utils {
         if (!Utils.isNullOrEmpty(port)) {
             url.append(":").append(port);
         }
-        for (String p : path) {
-            url.append("/").append(p);
+        if (path != null) {
+            for (String p : path) {
+                url.append("/").append(p);
+            }
         }
         System.out.println("\n\n###################\n\n" + url.toString() + "\n\n###################\n\n");
         return url.toString();
