@@ -61,4 +61,17 @@ public class TorrentManagementController {
         Torrent torrent = optional.get();
         return new ResponseEntity<Torrent>(torrent, HttpStatus.OK);
     }
+
+    @PostMapping(path = "/done/{pid}")
+    public ResponseEntity<Torrent> updateTorrentAsDone(@PathVariable String pid) {
+        Iterable<Torrent> torrents = torrentRepository.findAll();
+        for (Torrent torrent : torrents) {
+            if (TorrentStatusTP.STARTED.equals(torrent.getStatus()) && pid.equals(torrent.getPid())) {
+                torrent.setStatus(TorrentStatusTP.DONE);
+                torrentRepository.save(torrent);
+                return new ResponseEntity<Torrent>(torrent, HttpStatus.CREATED);
+            }
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
 }

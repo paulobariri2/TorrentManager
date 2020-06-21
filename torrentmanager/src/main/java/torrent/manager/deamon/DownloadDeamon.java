@@ -54,6 +54,12 @@ public class DownloadDeamon implements ApplicationRunner {
                     currentTorrent = findNextTorrent(torrents);
                 }
 
+                if (currentTorrent == null) {
+                    System.out.println("There is no torrent downloading.");
+                    Thread.sleep(Long.parseLong(config.getDeamonSleepTime()));
+                    continue;
+                }
+
                 boolean isTorrentDownloading = isTorrentDownloading(currentTorrent, errorCode);
                 if (ErrorStatusTP.ERROR.equals(errorCode.getStatus())) {
                     System.err.println(errorCode.getMessage());
