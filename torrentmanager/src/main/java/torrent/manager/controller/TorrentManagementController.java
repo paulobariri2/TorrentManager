@@ -3,6 +3,8 @@ package torrent.manager.controller;
 import java.sql.Timestamp;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,8 @@ import torrent.manager.model.TorrentStatusTP;
 @RequestMapping(path = "/torrent")
 public class TorrentManagementController {
 
+    private static Logger log = LoggerFactory.getLogger(TorrentManagementController.class);
+
     @Autowired
     private TorrentRepository torrentRepository;
 
@@ -31,24 +35,12 @@ public class TorrentManagementController {
             torrent.setDateTime(nowDateTime);
             torrent.setStatus(TorrentStatusTP.READY);
             torrentRepository.save(torrent);
+            log.info(torrent.toString() + " torrent created.");
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        return new ResponseEntity<Torrent>(torrent, HttpStatus.CREATED);
-    }
-
-    @PostMapping(path = "/update")
-    public ResponseEntity<Torrent> updateTorrent(@RequestBody Torrent torrent) {
-        long id = torrent.getId();
-        Optional<Torrent> optional = torrentRepository.findById(id);
-        if (optional.isPresent()) {
-            torrentRepository.save(torrent);
-        }
-        else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
         return new ResponseEntity<Torrent>(torrent, HttpStatus.CREATED);
     }
 
@@ -69,6 +61,7 @@ public class TorrentManagementController {
             if (TorrentStatusTP.STARTED.equals(torrent.getStatus()) && pid.equals(torrent.getPid())) {
                 torrent.setStatus(TorrentStatusTP.DONE);
                 torrentRepository.save(torrent);
+                log.info(torrent.toString() + "torrent updated as DONE.");
                 return new ResponseEntity<Torrent>(torrent, HttpStatus.CREATED);
             }
         }

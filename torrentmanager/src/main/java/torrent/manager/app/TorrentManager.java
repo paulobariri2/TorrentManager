@@ -15,7 +15,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 public class TorrentManager {
 
 	public static void main(String[] args) {
-		System.out.println("julia");
 		SpringApplication.run(TorrentManager.class, args);
 	}
 

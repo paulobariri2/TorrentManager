@@ -5,6 +5,8 @@ import java.util.Arrays;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -30,6 +32,7 @@ import torrent.manager.torrentservice.DownloadStatus;
 @Component
 public class DownloadDeamon implements ApplicationRunner {
 
+    private static Logger log = LoggerFactory.getLogger(DownloadDeamon.class);
     private static final Object RUNNING = "Running";
 
     private Torrent currentTorrent;
@@ -42,6 +45,7 @@ public class DownloadDeamon implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
+        log.info("Download Deamon started.");
         currentTorrent = null;
         while (true) {
             ErrorCode errorCode = new ErrorCode();
@@ -55,14 +59,14 @@ public class DownloadDeamon implements ApplicationRunner {
                 }
 
                 if (currentTorrent == null) {
-                    System.out.println("There is no torrent downloading.");
+                    log.info("There is no torrent downloading.");
                     Thread.sleep(Long.parseLong(config.getDeamonSleepTime()));
                     continue;
                 }
 
                 boolean isTorrentDownloading = isTorrentDownloading(currentTorrent, errorCode);
                 if (ErrorStatusTP.ERROR.equals(errorCode.getStatus())) {
-                    System.err.println(errorCode.getMessage());
+                    log.error(errorCode.getMessage());
                     Thread.sleep(Long.parseLong(config.getDeamonSleepTime()));
                     continue;
                 }
@@ -70,14 +74,11 @@ public class DownloadDeamon implements ApplicationRunner {
                 if (!isTorrentDownloading) {
                     errorCode = startDownload(currentTorrent);
                     if (ErrorStatusTP.ERROR.equals(errorCode.getStatus())) {
-                        System.err.println(errorCode.getMessage());
+                        log.error(errorCode.getMessage());
                         Thread.sleep(Long.parseLong(config.getDeamonSleepTime()));
                         continue;
                     }
                 }
-
-                System.out
-                        .println("Current torrent is " + (currentTorrent == null ? "NULL" : currentTorrent.toString()));
                 Thread.sleep(Long.parseLong(config.getDeamonSleepTime()));
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -95,7 +96,7 @@ public class DownloadDeamon implements ApplicationRunner {
         ObjectMapper jsonMapper = new ObjectMapper();
         try {
             Download downloadInfo = jsonMapper.readValue(result.getBody(), Download.class);
-            System.out.println("Starting " + downloadInfo.url + " download with pid=" + downloadInfo.pid);
+            log.info(downloadInfo.url + " download started with pid=" + downloadInfo.pid);
             torrent.setPid(downloadInfo.pid);
             torrent.setStatus(TorrentStatusTP.STARTED);
             torrentRepository.save(torrent);
@@ -107,17 +108,31 @@ public class DownloadDeamon implements ApplicationRunner {
     }
 
     private ResponseEntity<String> callPostDownloadFromTorrentService(Torrent torrent) {
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        HttpEntity<String> entity = new HttpEntity<String>("{\"url\":\"" + torrent.getUrl() + "\"}", headers);
-        String url = Utils.buildUrlString(config.getTorrentServiceHost(), config.getTorrentServicePort(), "download");
-        ResponseEntity<String> result = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-        return result;
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+            HttpEntity<String> entity = new HttpEntity<String>("{\"url\":\"" + torrent.getUrl() + "\"}", headers);
+            String url = Utils.buildUrlString(config.getTorrentServiceHost(), config.getTorrentServicePort(),
+                    "download");
+            log.info("POST " + url + " passing " + entity.getBody());
+            ResponseEntity<String> result = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+            return result;
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return null;
+        }
     }
 
     private ErrorCode validateResponse(ResponseEntity<String> response) {
         ErrorCode errorCode = new ErrorCode();
+
+        if (response == null) {
+            errorCode.setStatus(ErrorStatusTP.ERROR);
+            errorCode.setMessage("Response is null");
+            return errorCode;
+        }
+
         if (!HttpStatus.CREATED.equals(response.getStatusCode())) {
             errorCode.setStatus(ErrorStatusTP.ERROR);
             errorCode.setMessage(response.getBody());
@@ -172,6 +187,7 @@ public class DownloadDeamon implements ApplicationRunner {
         HttpEntity<String> entity = new HttpEntity<String>(null, headers);
         String url = Utils.buildUrlString(config.getTorrentServiceHost(), config.getTorrentServicePort(), "download",
                 pid);
+        log.info("GET " + url);
         ResponseEntity<String> result = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
         return result;
     }
@@ -204,7 +220,6 @@ public class DownloadDeamon implements ApplicationRunner {
         if (readyTorrent != null) {
             nextTorrent = readyTorrent;
         }
-
         return nextTorrent;
     }
 

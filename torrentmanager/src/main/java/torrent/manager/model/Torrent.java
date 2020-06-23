@@ -94,7 +94,7 @@ public class Torrent {
 
     @Override
     public String toString() {
-        return name + "-" + season + "-" + episode + "-" + pid;
+        return name + ".S" + season + ".E" + episode + "-PID=" + pid;
     }
 
 }

@@ -17,7 +17,6 @@ public class Utils {
                 url.append("/").append(p);
             }
         }
-        System.out.println("\n\n###################\n\n" + url.toString() + "\n\n###################\n\n");
         return url.toString();
     }
 }
