@@ -52,7 +52,7 @@
 	</dependencies>
 
 	<scm>
-		<developerConnection>scm:git:git://github.com/paulobariri2/TorrentManager</developerConnection>
+		<developerConnection>scm:git:git@github.com/paulobariri2/TorrentManager</developerConnection>
 	  <tag>torrentmanager-1.0.0</tag>
   </scm>
 
