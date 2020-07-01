@@ -9,7 +9,7 @@
 	</parent>
 	<groupId>torrent.manager.app</groupId>
 	<artifactId>torrentmanager</artifactId>
-	<version>0.0.8</version>
+	<version>0.0.9-SNAPSHOT</version>
 	<name>TorrentManager</name>
 	<description>Torrent Manager</description>
 
@@ -72,7 +72,7 @@
 		<developerConnection>scm:git:git@github.com:paulobariri2/TorrentManager.git</developerConnection>
 		<connection>scm:git:git@github.com:paulobariri2/TorrentManager.git</connection>
 		<url>https://github.com/paulobariri2/TorrentManager</url>
-		<tag>torrentmanager-0.0.8</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 </project>
