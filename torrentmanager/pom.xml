@@ -77,7 +77,7 @@
 	<distributionManagement>
 		<repository>
 			<id>torrentmanager</id>
-			<url>scm:git:git@github.com:paulobariri2/TorrentManager.git</url>
+			<url>https://github.com:paulobariri2/TorrentManager</url>
 		</repository>
 	</distributionManagement>
 
