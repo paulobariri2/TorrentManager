@@ -9,7 +9,7 @@
 	</parent>
 	<groupId>torrent.manager.app</groupId>
 	<artifactId>torrentmanager</artifactId>
-	<version>0.0.1</version>
+	<version>0.0.1-SNAPSHOT</version>
 	<name>demo</name>
 	<description>Demo project for Spring Boot</description>
 
@@ -53,8 +53,7 @@
 
 	<scm>
 		<developerConnection>scm:git:https://github.com/paulobariri2/TorrentManager.git</developerConnection>
-	  <tag>0.0.1</tag>
-  </scm>
+	</scm>
 
 	<build>
 		<plugins>
