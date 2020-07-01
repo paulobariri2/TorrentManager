@@ -76,8 +76,8 @@
 
 	<distributionManagement>
 		<repository>
-			<id>torrentmanager</id>
-			<url>https://github.com/paulobariri2/TorrentManager</url>
+			<id>githubpaulobariri2</id>
+			<url>https://maven.pkg.github.com/paulobariri2</url>
 		</repository>
 	</distributionManagement>
 	<profiles>
