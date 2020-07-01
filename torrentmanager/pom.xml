@@ -59,4 +59,20 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>GitHub paulobariri2 Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/paulobariri2/TorrentManager</url>
+		</repository>
+	</distributionManagement>
+
+	<scm>
+		<developerConnection>scm:git:git@github.com:paulobariri2/TorrentManager.git</developerConnection>
+		<connection>scm:git:git@github.com:paulobariri2/TorrentManager.git</connection>
+		<url>https://github.com/paulobariri2/TorrentManager</url>
+		<tag>HEAD</tag>
+	</scm>
+
 </project>
